@@ -1,0 +1,1726 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cotizador de Campañas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    /* ── Brand ── */
+    --orange:       #FF6900;
+    --orange-dark:  #CC5400;
+    --orange-light: #FF8533;
+    --orange-bg:    #FFF3EB;
+    --orange-glow:  rgba(255,105,0,0.12);
+
+    /* ── Surfaces ── */
+    --bg:           #F7F7F8;
+    --surface:      #FFFFFF;
+    --surface2:     #F0F0F2;
+    --surface3:     #E8E8EC;
+
+    /* ── Borders ── */
+    --border:       rgba(0,0,0,0.08);
+    --border-strong:rgba(0,0,0,0.16);
+
+    /* ── Text ── */
+    --text:         #0F0F10;
+    --text2:        #525259;
+    --text3:        #9898A0;
+
+    /* ── Semantic ── */
+    --accent:       #FF6900;
+    --accent-bg:    #FFF3EB;
+    --green:        #0A6640;
+    --green-bg:     #E3F5EC;
+    --amber:        #7A5000;
+    --amber-bg:     #FFF7E0;
+    --red:          #8B1A1A;
+    --red-bg:       #FDE8E8;
+
+    /* ── Type ── */
+    --font-display: 'Sora', sans-serif;
+    --font-body:    'Sora', sans-serif;
+    --font-mono:    'JetBrains Mono', monospace;
+
+    /* ── Shape ── */
+    --radius:       6px;
+    --radius-lg:    10px;
+    --radius-xl:    16px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ─── TOPBAR ─── */
+  .topbar {
+    background: #0F0F10;
+    border-bottom: none;
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.06);
+  }
+  .logo {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+  .logo-badge {
+    background: var(--orange);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-right: 10px;
+    text-transform: uppercase;
+  }
+  .logo-text { color: #fff; }
+  .logo-dot { color: var(--orange); margin-left: 1px; }
+  .topbar-actions { display: flex; gap: 8px; align-items: center; }
+
+  /* ─── BUTTONS ─── */
+  .btn {
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 7px 14px;
+    border-radius: var(--radius);
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.85);
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 0.01em;
+  }
+  .btn:hover { background: rgba(255,255,255,0.16); border-color: rgba(255,255,255,0.3); color: #fff; }
+  .btn-primary { background: var(--orange); color: #fff; border-color: var(--orange); font-weight: 600; }
+  .btn-primary:hover { background: var(--orange-dark); border-color: var(--orange-dark); }
+  .btn-ghost { border-color: transparent; background: transparent; color: rgba(255,255,255,0.7); }
+  .btn-ghost:hover { background: rgba(255,255,255,0.08); border-color: transparent; }
+
+  /* ─── LAYOUT ─── */
+  .layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    height: calc(100vh - 56px);
+    overflow: hidden;
+  }
+
+  /* ─── LEFT: CATALOG ─── */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .sidebar-header {
+    padding: 16px 18px 12px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg, #fff 0%, #FFF8F4 100%);
+  }
+  .sidebar-title {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: var(--text);
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .sidebar-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px;
+    height: 14px;
+    background: var(--orange);
+    border-radius: 2px;
+  }
+  .search-wrap { position: relative; }
+  .search-wrap svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text3); }
+  .search {
+    width: 100%;
+    padding: 8px 10px 8px 34px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .search:focus { border-color: var(--orange); box-shadow: 0 0 0 3px var(--orange-glow); }
+
+  .catalog-list { flex: 1; overflow-y: auto; padding: 8px 0 20px; }
+  .catalog-list::-webkit-scrollbar { width: 4px; }
+  .catalog-list::-webkit-scrollbar-track { background: transparent; }
+  .catalog-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .catalog-list::-webkit-scrollbar-thumb:hover { background: var(--orange); }
+
+  .cat-label {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--orange);
+    padding: 14px 18px 5px;
+    font-family: var(--font-mono);
+    opacity: 0.85;
+  }
+  .soporte-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 20px;
+    cursor: pointer;
+    transition: background 0.1s;
+    gap: 10px;
+  }
+  .soporte-item:hover { background: var(--orange-bg); }
+  .soporte-item.active { background: var(--orange-bg); border-left: 2px solid var(--orange); }
+  .soporte-info { flex: 1; min-width: 0; }
+  .soporte-name {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+  }
+  .soporte-price {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: var(--font-mono);
+    margin-top: 2px;
+    letter-spacing: 0.02em;
+  }
+  .soporte-badges { display: flex; gap: 3px; margin-top: 3px; flex-wrap: wrap; }
+  .badge {
+    font-size: 9px;
+    font-weight: 500;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    letter-spacing: 0.03em;
+  }
+  .badge-iva { background: var(--amber-bg); color: var(--amber); }
+  .badge-mun { background: var(--red-bg); color: var(--red); }
+  .badge-prod { background: var(--green-bg); color: var(--green); }
+  .add-circle {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text3);
+    font-size: 16px;
+    line-height: 1;
+    transition: all 0.15s;
+    flex-shrink: 0;
+    font-weight: 300;
+  }
+  .soporte-item:hover .add-circle { border-color: var(--orange); color: var(--orange); background: var(--orange-bg); }
+  .soporte-item.active .add-circle { background: var(--orange); border-color: var(--orange); color: #fff; }
+
+  /* ─── RIGHT: MAIN CONTENT ─── */
+  .main { display: flex; flex-direction: column; overflow: hidden; }
+
+  /* Campaign header */
+  .campaign-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    background: linear-gradient(to right, #fff 0%, #FFF8F4 100%);
+  }
+  .field-group { display: flex; flex-direction: column; gap: 4px; }
+  .field-label { font-size: 9px; font-weight: 600; color: var(--orange); letter-spacing: 0.08em; text-transform: uppercase; font-family: var(--font-mono); }
+  .field-input {
+    font-size: 14px;
+    font-family: var(--font-body);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 6px 10px;
+    color: var(--text);
+    background: var(--bg);
+    outline: none;
+    transition: border-color 0.15s;
+    min-width: 0;
+  }
+  .field-input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px var(--orange-glow); outline: none; }
+  .field-input.wide { width: 260px; }
+  .field-input.date { width: 150px; }
+  .field-input.client { width: 200px; }
+
+  /* ─── METRICS ─── */
+  .metrics-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    padding: 14px 24px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+  .metric-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .metric-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--orange);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .metric-card:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(255,105,0,0.08); }
+  .metric-card:hover::after { opacity: 1; }
+  .metric-label { font-size: 10px; color: var(--text3); font-family: var(--font-mono); letter-spacing: 0.05em; text-transform: uppercase; }
+  .metric-value {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    margin-top: 6px;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+  .metric-value.accent { color: var(--orange); }
+  .metric-sub { font-size: 11px; color: var(--text3); margin-top: 2px; font-family: var(--font-mono); }
+
+  /* ─── TABLE AREA ─── */
+  .table-wrap { flex: 1; overflow-y: auto; padding: 20px 28px; }
+  .table-wrap::-webkit-scrollbar { width: 4px; }
+  .table-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text2);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  th {
+    text-align: left;
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--orange);
+    padding: 0 10px 8px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-family: var(--font-mono);
+    border-bottom: 2px solid var(--orange-bg);
+  }
+  th.r { text-align: right; }
+  td {
+    padding: 10px 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+    color: var(--text);
+  }
+  td.r { text-align: right; font-family: var(--font-mono); font-size: 12px; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--orange-bg); }
+
+  .qty-cell { display: flex; align-items: center; gap: 6px; justify-content: center; }
+  .qty-btn {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text2);
+    font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: all 0.1s;
+    line-height: 1;
+    padding: 0;
+    flex-shrink: 0;
+  }
+  .qty-btn:hover { border-color: var(--orange); color: var(--orange); background: var(--orange-bg); }
+  .qty-val { font-family: var(--font-mono); font-size: 13px; min-width: 22px; text-align: center; }
+
+  .remove-btn { color: var(--text3); cursor: pointer; font-size: 16px; transition: color 0.1s; line-height: 1; }
+  .remove-btn:hover { color: var(--orange); }
+
+  /* EMPTY STATE */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--text3);
+    gap: 10px;
+  }
+  .empty-icon { font-size: 40px; opacity: 0.4; margin-bottom: 4px; }
+  .empty-title { font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--text2); }
+  .empty-sub { font-size: 13px; }
+
+  /* TOTALS FOOTER */
+  .totals-bar {
+    background: #0F0F10;
+    border-top: none;
+    padding: 12px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .totals-grid { display: flex; gap: 32px; }
+  .total-item { text-align: right; }
+  .total-label { font-size: 9px; color: rgba(255,255,255,0.45); font-family: var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; }
+  .total-value { font-family: var(--font-display); font-size: 17px; font-weight: 600; letter-spacing: -0.01em; color: rgba(255,255,255,0.85); }
+  .total-value.main { color: var(--orange); font-size: 22px; font-weight: 700; }
+
+  /* ─── CONFIG MODAL ─── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(26,25,22,0.5);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    width: 520px;
+    max-width: 95vw;
+    padding: 28px;
+    transform: translateY(8px);
+    transition: transform 0.2s;
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal-title { font-family: var(--font-display); font-size: 17px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.01em; }
+  .modal-sub { font-size: 13px; color: var(--text2); margin-bottom: 20px; line-height: 1.6; }
+  .modal-field { margin-bottom: 16px; }
+  .modal-field label { display: block; font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 6px; }
+  .modal-input {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-family: var(--font-mono);
+    color: var(--text);
+    background: var(--bg);
+    outline: none;
+  }
+  .modal-input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px var(--orange-glow); outline: none; }
+  .modal-hint { font-size: 11px; color: var(--text3); margin-top: 5px; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+
+  /* STATUS BAR */
+  .status-bar {
+    height: 28px;
+    background: rgba(0,0,0,0.04);
+    border-top: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 10px;
+    color: var(--text3);
+    font-family: var(--font-mono);
+    letter-spacing: 0.03em;
+  }
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+    display: inline-block;
+  }
+  .status-dot.ok { background: var(--orange); }
+  .status-dot.loading { background: var(--amber); animation: pulse 1s infinite; }
+  .status-dot.error { background: var(--red); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+
+  /* ─── DASHBOARD ─── */
+  .dash-wrap {
+    background: var(--bg);
+    padding: 24px 24px 40px;
+    border-top: none;
+    position: relative;
+  }
+  .dash-wrap::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--orange) 0%, var(--orange-light) 50%, transparent 100%);
+  }
+  .dash-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .dash-title {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .dash-icon {
+    background: var(--orange);
+    color: #fff;
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+  }
+  .dash-subtitle { font-size: 11px; color: var(--text3); font-family: var(--font-mono); margin-left: auto; }
+
+  /* KPI strip */
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 14px 14px 12px;
+    transition: box-shadow 0.15s;
+  }
+  .kpi:hover { box-shadow: 0 2px 12px rgba(255,105,0,0.1); }
+  .kpi-label { font-size: 9px; color: var(--text3); font-family: var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+  .kpi-val { font-family: var(--font-display); font-size: 19px; font-weight: 700; letter-spacing: -0.02em; color: var(--text); line-height: 1.1; }
+  .kpi-val.accent { color: var(--orange); }
+
+  /* Chart grid */
+  .charts-row {
+    display: grid;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .charts-row:has(.wide-2):has(.wide-3) { grid-template-columns: 2fr 3fr; }
+  .charts-row:has(.wide-full) { grid-template-columns: 1fr; }
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px 18px;
+    transition: box-shadow 0.15s;
+  }
+  .chart-card:hover { box-shadow: 0 2px 16px rgba(0,0,0,0.06); }
+  .chart-label {
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--orange);
+    letter-spacing: 0.1em;
+    margin-bottom: 14px;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    opacity: 0.9;
+  }
+  .chart-inner { position: relative; }
+
+
+
+  /* Summary table */
+  .dash-table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px 18px;
+    margin-top: 0;
+  }
+  .dash-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .dash-table th {
+    font-size: 9px; font-weight: 600; color: var(--orange); padding: 4px 10px 8px;
+    letter-spacing: 0.1em; text-transform: uppercase; font-family: var(--font-mono);
+    border-bottom: 2px solid var(--orange-bg); text-align: left; opacity: 0.9;
+  }
+  .dash-table th.r { text-align: right; }
+  .dash-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); color: var(--text); }
+  .dash-table td.r { text-align: right; font-family: var(--font-mono); font-size: 11px; }
+  .dash-table tr:last-child td { border-bottom: none; }
+  .dash-table tr:hover td { background: var(--bg); }
+  .cat-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
+
+  /* Dashboard toggle button */
+  .dash-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    padding: 6px 14px;
+    border: 1px solid rgba(255,105,0,0.5);
+    border-radius: var(--radius);
+    background: rgba(255,105,0,0.12);
+    color: var(--orange-light);
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-weight: 600;
+    transition: all 0.15s;
+    letter-spacing: 0.01em;
+  }
+  .dash-toggle:hover { background: var(--orange); border-color: var(--orange); color: #fff; }
+  .dash-toggle.active { background: var(--orange); border-color: var(--orange); color: #fff; }
+
+  @media print {
+    #dashboardSection { display: block !important; }
+  }
+
+
+  /* Buttons outside topbar (modal, right-header) use dark style */
+  .modal .btn,
+  .right-header .export-btn { /* already handled by export-btn class */ }
+
+  /* Right-header area buttons — on white bg */
+  .right-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .right-header input { font-size: 15px; font-weight: 700; border: none; outline: none; background: transparent; color: var(--text); width: 240px; letter-spacing: -0.01em; font-family: var(--font-display); }
+  .export-btn { font-size: 12px; padding: 6px 14px; border: 1.5px solid var(--orange); border-radius: var(--radius); background: transparent; color: var(--orange); cursor: pointer; font-weight: 600; font-family: var(--font-body); letter-spacing: 0.01em; transition: all 0.15s; }
+  .export-btn:hover { background: var(--orange); color: #fff; }
+
+  /* Modal buttons — on white bg */
+  .modal .btn {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .modal .btn:hover { background: var(--surface3); }
+  .modal .btn-primary { background: var(--orange); color: #fff; border-color: var(--orange); }
+  .modal .btn-primary:hover { background: var(--orange-dark); }
+
+  /* ─── PRINT / PDF STYLES ─── */
+  @media print {
+    .topbar, .sidebar, .campaign-header, .status-bar, .totals-bar .btn,
+    .qty-btn, .remove-btn, .btn { display: none !important; }
+    .layout { display: block !important; }
+    .main { overflow: visible !important; }
+    .metrics-row { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo"><span class="logo-badge">Movimagen</span><span class="logo-text">cotizador</span><span class="logo-dot">.</span></div>
+  <div class="topbar-actions">
+    <button class="btn btn-ghost" onclick="openConfig()">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Fuente de datos
+    </button>
+    <button class="btn" onclick="exportPDF()">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Exportar PDF
+    </button>
+    <button class="btn dash-toggle" id="dashBtn" onclick="toggleDashboard()">◈ Ver análisis</button>
+    <button class="btn btn-primary" onclick="nuevaCotizacion()">+ Nueva cotización</button>
+  </div>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div class="layout">
+
+  <!-- LEFT: CATALOG -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title">Catálogo de soportes</div>
+      <div class="search-wrap">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input class="search" type="text" placeholder="Buscar soporte..." id="searchInput" oninput="filterCatalog()">
+      </div>
+    </div>
+    <div class="catalog-list" id="catalogList">
+      <div style="padding:30px 20px;text-align:center;color:var(--text3);font-size:13px">Cargando catálogo...</div>
+    </div>
+  </div>
+
+  <!-- RIGHT: QUOTER -->
+  <div class="main">
+
+    <!-- Campaign Meta -->
+    <div class="campaign-header">
+      <div class="field-group">
+        <span class="field-label">Nombre de campaña</span>
+        <input class="field-input wide" type="text" id="campNombre" placeholder="Ej: Lanzamiento Verano 2025" oninput="markDirty()">
+      </div>
+      <div class="field-group">
+        <span class="field-label">Cliente</span>
+        <input class="field-input client" type="text" id="campCliente" placeholder="Nombre del cliente" oninput="markDirty()">
+      </div>
+      <div class="field-group">
+        <span class="field-label">Inicio</span>
+        <input class="field-input date" type="date" id="campInicio" oninput="markDirty()">
+      </div>
+      <div class="field-group">
+        <span class="field-label">Fin</span>
+        <input class="field-input date" type="date" id="campFin" oninput="markDirty()">
+      </div>
+      <div class="field-group">
+        <span class="field-label">N° Propuesta</span>
+        <input class="field-input" style="width:110px" type="text" id="campNumero" placeholder="COT-001" oninput="markDirty()">
+      </div>
+    </div>
+
+    <!-- Metrics -->
+    <div class="metrics-row">
+      <div class="metric-card">
+        <div class="metric-label">Inversión neta</div>
+        <div class="metric-value accent" id="metNeta">$0</div>
+        <div class="metric-sub">sin impuestos</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Total con impuestos</div>
+        <div class="metric-value" id="metTotal">$0</div>
+        <div class="metric-sub">IVA + imp. municipal</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Impactos estimados</div>
+        <div class="metric-value" id="metImpactos">0</div>
+        <div class="metric-sub" id="metCPM">CPM: —</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Soportes en plan</div>
+        <div class="metric-value" id="metCount">0</div>
+        <div class="metric-sub" id="metDuracion">— días de campaña</div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap" id="tableWrap">
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">📋</div>
+        <div class="empty-title">Plan vacío</div>
+        <div class="empty-sub">Seleccioná soportes del catálogo para armar la propuesta</div>
+      </div>
+      <table id="planTable" style="display:none">
+        <thead>
+          <tr>
+            <th>Soporte</th>
+            <th>Categoría</th>
+            <th style="text-align:center" id="thQtyLabel">Cant./Lugares</th>
+            <th class="r">Precio unit.</th>
+            <th class="r">Producción</th>
+            <th class="r">IVA</th>
+            <th class="r">Imp. Mun.</th>
+            <th class="r">Total</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="planBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Totals footer -->
+    <div class="totals-bar">
+      <div style="font-size:12px;color:var(--text3);font-family:var(--font-mono)">
+        <span id="statusDot" class="status-dot"></span>
+        <span id="statusText" style="margin-left:6px">Sin datos cargados</span>
+      </div>
+      <div class="totals-grid">
+        <div class="total-item">
+          <div class="total-label">Neto</div>
+          <div class="total-value" id="footNeta">$0</div>
+        </div>
+        <div class="total-item">
+          <div class="total-label">IVA</div>
+          <div class="total-value" id="footIVA">$0</div>
+        </div>
+        <div class="total-item">
+          <div class="total-label">Imp. Municipal</div>
+          <div class="total-value" id="footMun">$0</div>
+        </div>
+        <div class="total-item">
+          <div class="total-label">Total final</div>
+          <div class="total-value main" id="footTotal">$0</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- DASHBOARD -->
+<div id="dashboardSection" style="display:none">
+  <div class="dash-wrap">
+    <div class="dash-header">
+      <div class="dash-title"><span class="dash-icon">◈</span> Análisis de campaña</div>
+      <div class="dash-subtitle" id="dashSubtitle">—</div>
+    </div>
+    <div class="kpi-strip">
+      <div class="kpi"><div class="kpi-label">Inversión neta</div><div class="kpi-val accent" id="dkNeta">$0</div></div>
+      <div class="kpi"><div class="kpi-label">Total con impuestos</div><div class="kpi-val" id="dkTotal">$0</div></div>
+      <div class="kpi"><div class="kpi-label">Impactos totales</div><div class="kpi-val" id="dkImpactos">0</div></div>
+      <div class="kpi"><div class="kpi-label">CPM promedio</div><div class="kpi-val" id="dkCPM">—</div></div>
+      <div class="kpi"><div class="kpi-label">Soportes activos</div><div class="kpi-val" id="dkSoportes">0</div></div>
+      <div class="kpi"><div class="kpi-label">Duración</div><div class="kpi-val" id="dkSemanas">—</div></div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-card wide-2"><div class="chart-label">Distribución de inversión por categoría</div><div class="chart-inner" style="height:280px"><canvas id="chartDonut"></canvas></div></div>
+      <div class="chart-card wide-3"><div class="chart-label">Impactos estimados por soporte</div><div class="chart-inner" style="height:280px"><canvas id="chartImpactos"></canvas></div></div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-card wide-3"><div class="chart-label">Crecimiento acumulado de impactos durante la campaña</div><div class="chart-inner" style="height:260px"><canvas id="chartAcumulado"></canvas></div></div>
+      <div class="chart-card wide-2"><div class="chart-label">Inversión por departamento</div><div class="chart-inner" style="height:260px"><canvas id="chartDepto"></canvas></div></div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-card wide-full"><div class="chart-label">CPM por soporte ($ por cada 1.000 impactos) — solo soportes con datos de impactos</div><div class="chart-inner" style="height:220px"><canvas id="chartCPM"></canvas></div></div>
+    </div>
+    <div class="dash-table-wrap">
+      <div class="chart-label" style="margin-bottom:10px">Resumen por categoría</div>
+      <table class="dash-table"><thead><tr><th>Categoría</th><th class="r">Soportes</th><th class="r">Inversión neta</th><th class="r">% del plan</th><th class="r">Impactos</th><th class="r">CPM</th></tr></thead><tbody id="dashTableBody"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIG MODAL -->
+<div class="modal-overlay" id="configModal" onclick="closeConfigOutside(event)">
+  <div class="modal">
+    <div class="modal-title">Fuente de datos</div>
+    <div class="modal-sub">
+      Conectá el catálogo a tu Google Sheet. La hoja debe ser pública (o compartida con Anyone with link → Viewer)
+      y tener esta estructura de columnas:<br><br>
+      <code style="font-family:var(--font-mono);font-size:11px;background:var(--bg);padding:6px 10px;border-radius:6px;display:block;line-height:1.8">
+        id | categoria | nombre | precio | produccion | iva | imp_municipal | impactos | activo
+      </code>
+    </div>
+    <div class="modal-field">
+      <label>ID del Google Sheet</label>
+      <input class="modal-input" type="text" id="sheetId" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms">
+      <div class="modal-hint">Lo encontrás en la URL: docs.google.com/spreadsheets/d/<strong>ID</strong>/edit</div>
+    </div>
+    <div class="modal-field">
+      <label>Nombre de la pestaña</label>
+      <input class="modal-input" type="text" id="sheetTab" placeholder="Soportes">
+      <div class="modal-hint">El nombre exacto de la hoja (tab) donde están los datos</div>
+    </div>
+    <div class="modal-field">
+      <label>IVA aplicable (%)</label>
+      <input class="modal-input" type="number" id="ivaRate" placeholder="22" style="width:120px">
+    </div>
+    <div class="modal-field">
+      <label>Impuesto municipal (%)</label>
+      <input class="modal-input" type="number" id="munRate" placeholder="8" style="width:120px">
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeConfig()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveConfig()">Guardar y cargar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATE ───
+let catalog = [];
+let filteredCatalog = [];
+let plan = {}; // id -> { soporte, qty }
+let config = {
+  sheetId: '',
+  sheetTab: 'Soportes',
+  ivaRate: 22,
+  munRate: 8
+};
+
+// ─── CATÁLOGO REAL (extraído de Cotizador_Movimagen_2026.xlsx) ───
+const DEMO_DATA = [
+  {"id":"1","categoria":"PANTALLAS GIGANTES","nombre":"PANTALLA GIGANTE CURVA","ubicacion":"Rivera y L.A.Herrera","precio":23000,"produccion":0,"iva":false,"imp_municipal":true,"impactos":728530,"activo":true},
+  {"id":"2","categoria":"PANTALLAS GIGANTES","nombre":"PANTALLA GIGANTE","ubicacion":"Av Italia y Ricaldoni","precio":23000,"produccion":0,"iva":false,"imp_municipal":true,"impactos":1059298,"activo":true},
+  {"id":"3","categoria":"PANTALLAS GIGANTES","nombre":"PANTALLA GIGANTE","ubicacion":"Rivera y Bvar Batlle y Ordoñez","precio":23000,"produccion":0,"iva":false,"imp_municipal":true,"impactos":489014,"activo":true},
+  {"id":"4","categoria":"PANTALLAS GIGANTES","nombre":"PANTALLA GIGANTE 360","ubicacion":"Atlántico Shopping Punta del Este (Temp Alta)","precio":32000,"produccion":0,"iva":true,"imp_municipal":false,"impactos":1209302,"activo":true},
+  {"id":"5","categoria":"PANTALLAS GIGANTES","nombre":"PANTALLA GIGANTE 360","ubicacion":"Atlántico Shopping Punta del Este (Temp Baja)","precio":21000,"produccion":0,"iva":true,"imp_municipal":false,"impactos":46511,"activo":true},
+  {"id":"6","categoria":"CIRCUITOS DE PANTALLAS SHOPPINGS","nombre":"CIRCUITO SHOPPING","ubicacion":"Atlántico Shopping Punta del Este (Temp Alta)","precio":25200,"produccion":0,"iva":true,"imp_municipal":false,"impactos":1813953,"activo":true},
+  {"id":"7","categoria":"CIRCUITOS DE PANTALLAS SHOPPINGS","nombre":"CIRCUITO SHOPPING","ubicacion":"Atlántico Shopping Punta del Este (Temp Baja)","precio":15600,"produccion":0,"iva":true,"imp_municipal":false,"impactos":58139,"activo":true},
+  {"id":"8","categoria":"CIRCUITOS DE PANTALLAS SHOPPINGS","nombre":"CIRCUITO SHOPPING","ubicacion":"Minas (2 gigantes en circuito)","precio":11800,"produccion":0,"iva":true,"imp_municipal":false,"impactos":42732,"activo":true},
+  {"id":"9","categoria":"CIRCUITOS DE PANTALLAS SHOPPINGS","nombre":"CIRCUITO SHOPPING","ubicacion":"Salto","precio":10400,"produccion":0,"iva":true,"imp_municipal":false,"impactos":71220,"activo":true},
+  {"id":"10","categoria":"CIRCUITOS DE PANTALLAS SHOPPINGS","nombre":"CIRCUITO SHOPPING","ubicacion":"Paysandú","precio":11700,"produccion":0,"iva":true,"imp_municipal":false,"impactos":70930,"activo":true},
+  {"id":"11","categoria":"CIRCUITOS DE PANTALLAS SHOPPINGS","nombre":"CIRCUITO SHOPPING","ubicacion":"Mercedes","precio":6500,"produccion":0,"iva":true,"imp_municipal":false,"impactos":47480,"activo":true},
+  {"id":"12","categoria":"CIRCUITOS DE PANTALLAS SHOPPINGS","nombre":"CIRCUITO SHOPPING","ubicacion":"Colonia","precio":6500,"produccion":0,"iva":true,"imp_municipal":false,"impactos":32049,"activo":true},
+  {"id":"13","categoria":"PLOTEO PUERTAS","nombre":"PUERTA ENTRADA SHOPPING","ubicacion":"Atlántico Shopping Punta del Este (Temp Alta)","precio":19700,"produccion":44625,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"14","categoria":"PLOTEO PUERTAS","nombre":"PUERTA ENTRADA SHOPPING","ubicacion":"Atlántico Shopping Punta del Este (Temp Baja)","precio":11800,"produccion":44625,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"15","categoria":"PLOTEO PUERTAS","nombre":"PUERTA ENTRADA SHOPPING","ubicacion":"Salto","precio":11800,"produccion":44625,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"16","categoria":"PLOTEO PUERTAS","nombre":"PUERTA ENTRADA SHOPPING","ubicacion":"Paysandú","precio":11800,"produccion":44625,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"17","categoria":"PLOTEO PUERTAS","nombre":"PUERTA ENTRADA SHOPPING","ubicacion":"Mercedes","precio":11800,"produccion":44625,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"18","categoria":"PLOTEO PUERTAS","nombre":"PUERTA ENTRADA SHOPPING","ubicacion":"Colonia","precio":11800,"produccion":44625,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"19","categoria":"PLOTEO PUERTAS","nombre":"PUERTA ENTRADA SHOPPING","ubicacion":"Minas","precio":11800,"produccion":44625,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"20","categoria":"BANNERS EN SHOPPINGS","nombre":"BANNER EXTRA GIGANTE","ubicacion":"Atlántico Shopping Punta del Este (Temp Alta)","precio":19700,"produccion":101050,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"21","categoria":"BANNERS EN SHOPPINGS","nombre":"BANNER EXTRA GIGANTE","ubicacion":"Atlántico Shopping Punta del Este (Temp Baja)","precio":11800,"produccion":101050,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"22","categoria":"BANNERS EN SHOPPINGS","nombre":"BANNER GIGANTE SHOPPING","ubicacion":"Salto","precio":5800,"produccion":34150,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"23","categoria":"BANNERS EN SHOPPINGS","nombre":"BANNER GIGANTE SHOPPING","ubicacion":"Paysandú","precio":5800,"produccion":34150,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"24","categoria":"BANNERS EN SHOPPINGS","nombre":"BANNER GIGANTE SHOPPING","ubicacion":"Mercedes","precio":5800,"produccion":34150,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"25","categoria":"BANNERS EN SHOPPINGS","nombre":"BANNER GIGANTE SHOPPING","ubicacion":"Colonia","precio":5800,"produccion":28900,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"26","categoria":"BANNERS EN SHOPPINGS","nombre":"BANNER GIGANTE SHOPPING","ubicacion":"Minas","precio":5800,"produccion":26250,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"27","categoria":"BANNERS EN SHOPPINGS","nombre":"BANNER STANDARD SHOPPING","ubicacion":"Salto","precio":2900,"produccion":5250,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"28","categoria":"BANNERS EN SHOPPINGS","nombre":"BANNER STANDARD SHOPPING","ubicacion":"Paysandú","precio":2900,"produccion":5250,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"29","categoria":"BANNERS EN SHOPPINGS","nombre":"BANNER STANDARD SHOPPING","ubicacion":"Mercedes","precio":2900,"produccion":5250,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"30","categoria":"BANNERS EN SHOPPINGS","nombre":"BANNER PARKING SHOPPING","ubicacion":"Atlántico Shopping Punta del Este (Temp Alta)","precio":4350,"produccion":8150,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"31","categoria":"BANNERS EN SHOPPINGS","nombre":"BANNER PARKING SHOPPING","ubicacion":"Atlántico Shopping Punta del Este (Temp Baja)","precio":2900,"produccion":8150,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"32","categoria":"BANNERS EN SHOPPINGS","nombre":"BANNER PARKING SHOPPING","ubicacion":"Salto","precio":2900,"produccion":8150,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"33","categoria":"BANNERS EN SHOPPINGS","nombre":"BANNER PARKING SHOPPING","ubicacion":"Paysandú","precio":2900,"produccion":8150,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"34","categoria":"BANNERS EN SHOPPINGS","nombre":"BANNER PARKING SHOPPING","ubicacion":"Minas","precio":2900,"produccion":8150,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"35","categoria":"BANNERS EN SHOPPINGS","nombre":"BANNER PARKING SHOPPING","ubicacion":"Colonia","precio":2900,"produccion":8150,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"36","categoria":"BANNERS EN SHOPPINGS","nombre":"LONA PARKING SHOPPING","ubicacion":"Mercedes","precio":5800,"produccion":28875,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"37","categoria":"PLOTEO ESCALERAS Y ASCENSORES","nombre":"ESCALERA SHOPPING","ubicacion":"Atlántico Shopping Punta del Este (Temp Alta)","precio":19700,"produccion":42250,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"38","categoria":"PLOTEO ESCALERAS Y ASCENSORES","nombre":"ESCALERA SHOPPING","ubicacion":"Atlántico Shopping Punta del Este (Temp Baja)","precio":11800,"produccion":42250,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"39","categoria":"PLOTEO ESCALERAS Y ASCENSORES","nombre":"ESCALERA SHOPPING","ubicacion":"Salto","precio":11800,"produccion":42250,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"40","categoria":"PLOTEO ESCALERAS Y ASCENSORES","nombre":"ASCENSOR SHOPPING","ubicacion":"Atlántico Shopping Punta del Este (Temp Alta)","precio":11800,"produccion":34650,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"41","categoria":"PLOTEO ESCALERAS Y ASCENSORES","nombre":"ASCENSOR SHOPPING","ubicacion":"Atlántico Shopping Punta del Este (Temp Baja)","precio":7900,"produccion":34650,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"42","categoria":"PLOTEO ESCALERAS Y ASCENSORES","nombre":"ASCENSOR SHOPPING","ubicacion":"Salto","precio":7900,"produccion":34650,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"43","categoria":"CARA PALETAS BACKLIGHT Y PLOTEO PISOS","nombre":"CARA PALETAS BACKLIGHT SHOPPING","ubicacion":"Salto","precio":2900,"produccion":8150,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"44","categoria":"CARA PALETAS BACKLIGHT Y PLOTEO PISOS","nombre":"CARA PALETAS BACKLIGHT SHOPPING","ubicacion":"Mercedes","precio":2900,"produccion":8150,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"45","categoria":"CARA PALETAS BACKLIGHT Y PLOTEO PISOS","nombre":"CARA PALETAS BACKLIGHT SHOPPING","ubicacion":"Colonia","precio":2900,"produccion":8150,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"46","categoria":"CARA PALETAS BACKLIGHT Y PLOTEO PISOS","nombre":"PISOS PASILLO SHOPPING","ubicacion":"Atlántico Shopping Punta del Este (Temp Alta)","precio":4350,"produccion":13650,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"47","categoria":"CARA PALETAS BACKLIGHT Y PLOTEO PISOS","nombre":"PISOS PASILLO SHOPPING","ubicacion":"Atlántico Shopping Punta del Este (Temp Baja)","precio":2900,"produccion":13650,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"48","categoria":"CARA PALETAS BACKLIGHT Y PLOTEO PISOS","nombre":"PISOS PASILLO SHOPPING","ubicacion":"Salto","precio":2900,"produccion":13650,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"49","categoria":"CARA PALETAS BACKLIGHT Y PLOTEO PISOS","nombre":"PISOS PASILLO SHOPPING","ubicacion":"Paysandú","precio":2900,"produccion":13650,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"50","categoria":"CARA PALETAS BACKLIGHT Y PLOTEO PISOS","nombre":"PISOS PASILLO SHOPPING","ubicacion":"Mercedes","precio":2900,"produccion":13650,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"51","categoria":"CARA PALETAS BACKLIGHT Y PLOTEO PISOS","nombre":"PISOS PASILLO SHOPPING","ubicacion":"Colonia","precio":2900,"produccion":13650,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"52","categoria":"CARA PALETAS BACKLIGHT Y PLOTEO PISOS","nombre":"PISOS PASILLO SHOPPING","ubicacion":"Minas","precio":2900,"produccion":13650,"iva":true,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"53","categoria":"MEDIANERAS EN EDIFICIOS","nombre":"MEDIANERA EDIFICIO","ubicacion":"Av 18 de Julio y Roxlo - visual publico al Este","precio":21650,"produccion":111550,"iva":false,"imp_municipal":true,"impactos":0,"activo":true},
+  {"id":"54","categoria":"MEDIANERAS EN EDIFICIOS","nombre":"MEDIANERA EDIFICIO","ubicacion":"Bvar. Batlle y Ordoñez y Av. Rivera - visual hacia N y E","precio":21650,"produccion":133875,"iva":false,"imp_municipal":true,"impactos":0,"activo":true},
+  {"id":"55","categoria":"MEDIANERAS EN EDIFICIOS","nombre":"MEDIANERA EDIFICIO","ubicacion":"Av Italia y Caldas - visual publico hacia el Este","precio":21650,"produccion":127300,"iva":false,"imp_municipal":true,"impactos":0,"activo":true},
+  {"id":"56","categoria":"CARTELES EN BUSES","nombre":"MegaBus Exclusivo","ubicacion":"Coetc - Línea D9 y DM1 (Montevideo)","precio":27550,"produccion":107800,"iva":false,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"57","categoria":"CARTELES EN BUSES","nombre":"FullBus Exclusivo","ubicacion":"Coetc - Líneas Suburbanas (Mvd y Canelones)","precio":17050,"produccion":63525,"iva":false,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"58","categoria":"CARTELES EN BUSES","nombre":"InteriorBus Exclusivo","ubicacion":"Coetc - Líneas Urbanas (Montevideo)","precio":5650,"produccion":20450,"iva":false,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"59","categoria":"CARTELES EN BUSES","nombre":"TraseroFull","ubicacion":"Coetc - Líneas Suburbanas (Mvd y Canelones)","precio":2100,"produccion":7600,"iva":false,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"60","categoria":"CARTELES EN BUSES","nombre":"LateralFull","ubicacion":"Coetc - Líneas Suburbanas (Mvd y Canelones)","precio":26200,"produccion":36500,"iva":false,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"61","categoria":"CARTELES EN BUSES","nombre":"Lateral Extra o 2 Paños","ubicacion":"Coetc - Líneas Urbanas (Montevideo)","precio":1050,"produccion":2900,"iva":false,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"62","categoria":"CARTELES EN BUSES","nombre":"Lateral 1 Paño","ubicacion":"Coetc - Líneas Urbanas (Montevideo)","precio":900,"produccion":2350,"iva":false,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"63","categoria":"CARTELES EN BUSES","nombre":"Trasero Premium","ubicacion":"Coetc - Líneas Urbanas (Montevideo)","precio":850,"produccion":1575,"iva":false,"imp_municipal":false,"impactos":0,"activo":true},
+  {"id":"64","categoria":"CARTELES EN BUSES","nombre":"Luneta Premium","ubicacion":"Coetc - Líneas Urbanas (Montevideo)","precio":850,"produccion":2625,"iva":false,"imp_municipal":false,"impactos":0,"activo":true}
+];
+
+// ─── INIT ───
+function init() {
+  loadConfig();
+  loadCatalog();
+  setDefaultDates();
+}
+
+function setDefaultDates() {
+  const today = new Date();
+  const next = new Date(today); next.setMonth(next.getMonth() + 1);
+  document.getElementById('campInicio').value = today.toISOString().split('T')[0];
+  document.getElementById('campFin').value = next.toISOString().split('T')[0];
+  document.getElementById('campNumero').value = 'COT-' + String(Date.now()).slice(-4);
+}
+
+function loadConfig() {
+  try {
+    const saved = localStorage.getItem('cotizador_config');
+    if (saved) config = { ...config, ...JSON.parse(saved) };
+  } catch(e) {}
+}
+
+function saveConfigToStorage() {
+  try { localStorage.setItem('cotizador_config', JSON.stringify(config)); } catch(e) {}
+}
+
+// ─── GOOGLE SHEETS LOADER ───
+async function loadCatalog() {
+  if (!config.sheetId) {
+    catalog = DEMO_DATA.map(s => ({...s, precio_semanal: s.precio }));
+    filteredCatalog = [...catalog];
+    renderCatalog();
+    setStatus('ok', '64 soportes cargados · Cotizador Movimagen 2026');
+    return;
+  }
+  setStatus('loading', 'Cargando catálogo...');
+  const tab = encodeURIComponent(config.sheetTab || 'Soportes');
+  const url = `https://docs.google.com/spreadsheets/d/${config.sheetId}/gviz/tq?tqx=out:json&sheet=${tab}`;
+  try {
+    const res = await fetch(url);
+    const text = await res.text();
+    const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\(([\s\S]+)\)/)[1]);
+    catalog = parseSheetData(json);
+    filteredCatalog = catalog.filter(s => s.activo);
+    renderCatalog();
+    setStatus('ok', `${catalog.length} soportes cargados desde Google Sheets`);
+  } catch(err) {
+    catalog = DEMO_DATA.map(s => ({...s, precio_semanal: s.precio }));
+    filteredCatalog = [...catalog];
+    renderCatalog();
+    setStatus('error', 'Error al cargar Sheets — usando datos de ejemplo');
+  }
+}
+
+function parseSheetData(json) {
+  const rows = json.table.rows;
+  const cols = json.table.cols.map(c => c.label.toLowerCase().trim());
+  return rows.map(row => {
+    const obj = {};
+    cols.forEach((col, i) => {
+      const cell = row.c[i];
+      obj[col] = cell ? cell.v : null;
+    });
+    return {
+      id: String(obj.id || Math.random()),
+      categoria: obj.categoria || 'Sin categoría',
+      nombre: obj.nombre || '—',
+      precio: Number(obj.precio) || 0,
+      produccion: Number(obj.produccion) || 0,
+      iva: String(obj.iva).toLowerCase() === 'true' || obj.iva === 1,
+      imp_municipal: String(obj.imp_municipal).toLowerCase() === 'true' || obj.imp_municipal === 1,
+      impactos: Number(obj.impactos) || 0,
+      activo: String(obj.activo).toLowerCase() !== 'false' && obj.activo !== 0,
+    };
+  }).filter(s => s.activo);
+}
+
+// ─── STATUS ───
+function setStatus(type, text) {
+  document.getElementById('statusDot').className = 'status-dot ' + type;
+  document.getElementById('statusText').textContent = text;
+}
+
+// ─── CATALOG RENDER ───
+function filterCatalog() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  filteredCatalog = catalog.filter(s =>
+    s.nombre.toLowerCase().includes(q) ||
+    s.categoria.toLowerCase().includes(q)
+  );
+  renderCatalog();
+}
+
+function renderCatalog() {
+  const cats = [...new Set(filteredCatalog.map(s => s.categoria))];
+  const el = document.getElementById('catalogList');
+  if (!filteredCatalog.length) {
+    el.innerHTML = '<div style="padding:24px 20px;text-align:center;color:var(--text3);font-size:13px">Sin resultados</div>';
+    return;
+  }
+  el.innerHTML = cats.map(cat => {
+    const items = filteredCatalog.filter(s => s.categoria === cat);
+    return `<div class="cat-label">${cat}</div>` + items.map(s => {
+      const inPlan = !!plan[s.id];
+      const badges = [
+        s.iva ? '<span class="badge badge-iva">IVA</span>' : '',
+        s.imp_municipal ? '<span class="badge badge-mun">Mun.</span>' : '',
+        s.produccion ? '<span class="badge badge-prod">Prod.</span>' : '',
+      ].join('');
+      return `<div class="soporte-item ${inPlan ? 'active' : ''}" onclick="toggleSoporte('${s.id}')">
+        <div class="soporte-info">
+          <div class="soporte-name">${s.nombre}</div>
+          <div class="soporte-price">${fmt(s.precio)}</div>
+          <div class="soporte-badges">${badges}</div>
+        </div>
+        <div class="add-circle">${inPlan ? '✓' : '+'}</div>
+      </div>`;
+    }).join('');
+  }).join('');
+}
+
+// ─── PLAN MANAGEMENT ───
+function toggleSoporte(id) {
+  if (plan[id]) {
+    delete plan[id];
+  } else {
+    const s = catalog.find(x => x.id === id);
+    if (s) plan[id] = { soporte: s, qty: 1 };
+  }
+  renderCatalog();
+  renderPlan();
+}
+
+function changeQty(id, delta) {
+  if (!plan[id]) return;
+  plan[id].qty = Math.max(1, plan[id].qty + delta);
+  renderPlan();
+}
+
+function removeSoporte(id) {
+  delete plan[id];
+  renderCatalog();
+  renderPlan();
+}
+
+function renderPlan() {
+  const items = Object.values(plan);
+  const empty = document.getElementById('emptyState');
+  const table = document.getElementById('planTable');
+  const body = document.getElementById('planBody');
+
+  if (!items.length) {
+    empty.style.display = '';
+    table.style.display = 'none';
+    updateMetrics(items);
+    return;
+  }
+  empty.style.display = 'none';
+  table.style.display = '';
+
+  body.innerHTML = items.map(({ soporte: s, qty }) => {
+    const neta = calcBase(s, qty);
+    const ivaAmt = s.iva ? neta * (config.ivaRate / 100) : 0;
+    const munAmt = s.imp_municipal ? neta * (config.munRate / 100) : 0;
+    const total = neta + ivaAmt + munAmt;
+    return `<tr>
+      <td style="font-weight:500;max-width:200px">${s.nombre}</td>
+      <td style="color:var(--text2)">${s.categoria}</td>
+      <td>
+        <div class="qty-cell">
+          <button class="qty-btn" onclick="changeQty('${s.id}',-1)">−</button>
+          <span class="qty-val">${qty}</span>
+          <button class="qty-btn" onclick="changeQty('${s.id}',1)">+</button>
+        </div>
+      </td>
+      <td class="r">${isDigital(s) ? fmt(s.precio) + ' × ' + getSemanas() + ' sem.' : fmt(s.precio)}</td>
+      <td class="r" style="color:var(--text3)">${s.produccion ? fmt(s.produccion) : '—'}</td>
+      <td class="r" style="color:var(--text3)">${ivaAmt ? fmt(ivaAmt) : '—'}</td>
+      <td class="r" style="color:var(--text3)">${munAmt ? fmt(munAmt) : '—'}</td>
+      <td class="r" style="font-weight:500">${fmt(total)}</td>
+      <td style="text-align:center"><span class="remove-btn" onclick="removeSoporte('${s.id}')">×</span></td>
+    </tr>`;
+  }).join('');
+
+  updateMetrics(items);
+}
+
+function updateMetrics(items) {
+  let neta = 0, total = 0, totalIVA = 0, totalMun = 0, impactos = 0;
+  items.forEach(({ soporte: s, qty }) => {
+    const base = calcBase(s, qty);
+    const ivaAmt = s.iva ? base * (config.ivaRate / 100) : 0;
+    const munAmt = s.imp_municipal ? base * (config.munRate / 100) : 0;
+    neta += base;
+    totalIVA += ivaAmt;
+    totalMun += munAmt;
+    total += base + ivaAmt + munAmt;
+    impactos += s.impactos * qty;
+  });
+
+  const cpm = impactos > 0 ? ((neta / impactos) * 1000) : 0;
+  const inicio = document.getElementById('campInicio').value;
+  const fin = document.getElementById('campFin').value;
+  let dias = '—';
+  if (inicio && fin) {
+    const d = Math.round((new Date(fin) - new Date(inicio)) / 86400000);
+    if (d > 0) dias = d;
+  }
+
+  document.getElementById('metNeta').textContent = fmt(neta);
+  document.getElementById('metTotal').textContent = fmt(total);
+  document.getElementById('metImpactos').textContent = fmtNum(impactos);
+  document.getElementById('metCPM').textContent = cpm > 0 ? 'CPM: ' + fmt(cpm) : 'CPM: —';
+  document.getElementById('metCount').textContent = items.length;
+  document.getElementById('metDuracion').textContent = dias !== '—' ? dias + ' días de campaña' : '— días de campaña';
+
+  document.getElementById('footNeta').textContent = fmt(neta);
+  document.getElementById('footIVA').textContent = fmt(totalIVA);
+  document.getElementById('footMun').textContent = fmt(totalMun);
+  document.getElementById('footTotal').textContent = fmt(total);
+}
+
+// ─── FORMAT ───
+
+function getSemanas() {
+  const inicio = document.getElementById('campInicio').value;
+  const fin = document.getElementById('campFin').value;
+  if (!inicio || !fin) return 1;
+  const dias = Math.round((new Date(fin) - new Date(inicio)) / 86400000);
+  return dias > 0 ? Math.max(1, Math.round(dias / 7)) : 1;
+}
+
+// Categorías digitales (precio × semanas, etiqueta "Lugares")
+const CATS_DIGITAL = ['PANTALLAS GIGANTES', 'CIRCUITOS DE PANTALLAS SHOPPINGS'];
+function isDigital(s) { return CATS_DIGITAL.includes(s.categoria); }
+function getLabel(s) { return isDigital(s) ? 'Lugares' : 'Cantidad'; }
+function calcBase(s, qty) {
+  const semanas = isDigital(s) ? getSemanas() : 1;
+  return s.precio * qty * semanas + s.produccion;
+}
+
+function fmt(n) {
+  return '$' + Math.round(n).toLocaleString('es-UY');
+}
+function fmtNum(n) {
+  return Math.round(n).toLocaleString('es-UY');
+}
+
+// ─── CONFIG MODAL ───
+function openConfig() {
+  document.getElementById('sheetId').value = config.sheetId || '';
+  document.getElementById('sheetTab').value = config.sheetTab || 'Soportes';
+  document.getElementById('ivaRate').value = config.ivaRate || 22;
+  document.getElementById('munRate').value = config.munRate || 8;
+  document.getElementById('configModal').classList.add('open');
+}
+function closeConfig() {
+  document.getElementById('configModal').classList.remove('open');
+}
+function closeConfigOutside(e) {
+  if (e.target === document.getElementById('configModal')) closeConfig();
+}
+function saveConfig() {
+  config.sheetId = document.getElementById('sheetId').value.trim();
+  config.sheetTab = document.getElementById('sheetTab').value.trim() || 'Soportes';
+  config.ivaRate = parseFloat(document.getElementById('ivaRate').value) || 22;
+  config.munRate = parseFloat(document.getElementById('munRate').value) || 8;
+  saveConfigToStorage();
+  closeConfig();
+  loadCatalog();
+}
+
+// ─── NUEVA COTIZACIÓN ───
+function nuevaCotizacion() {
+  if (Object.keys(plan).length > 0 && !confirm('¿Empezar una nueva cotización? Se perderá la actual.')) return;
+  plan = {};
+  document.getElementById('campNombre').value = '';
+  document.getElementById('campCliente').value = '';
+  document.getElementById('campNumero').value = 'COT-' + String(Date.now()).slice(-4);
+  setDefaultDates();
+  renderCatalog();
+  renderPlan();
+}
+
+function markDirty() {
+  renderPlan();  // re-render para recalcular precio × semanas
+}
+
+// ─── PDF EXPORT ───
+function exportPDF() {
+  const campNombre = document.getElementById('campNombre').value || 'Cotización';
+  const campCliente = document.getElementById('campCliente').value || '';
+  const campNumero = document.getElementById('campNumero').value || '';
+  const campInicio = document.getElementById('campInicio').value || '';
+  const campFin = document.getElementById('campFin').value || '';
+  const items = Object.values(plan);
+
+  let neta = 0, total = 0, totalIVA = 0, totalMun = 0, impactos = 0;
+  items.forEach(({ soporte: s, qty }) => {
+    const base = calcBase(s, qty);
+    const ivaAmt = s.iva ? base * (config.ivaRate / 100) : 0;
+    const munAmt = s.imp_municipal ? base * (config.munRate / 100) : 0;
+    neta += base; totalIVA += ivaAmt; totalMun += munAmt;
+    total += base + ivaAmt + munAmt;
+    impactos += s.impactos * qty;
+  });
+
+  const tableRows = items.map(({ soporte: s, qty }) => {
+    const base = calcBase(s, qty);
+    const ivaAmt = s.iva ? base * (config.ivaRate / 100) : 0;
+    const munAmt = s.imp_municipal ? base * (config.munRate / 100) : 0;
+    const rowTotal = base + ivaAmt + munAmt;
+    return `<tr>
+      <td>${s.nombre}</td>
+      <td>${s.categoria}</td>
+      <td style="text-align:center">${qty}</td>
+      <td style="text-align:right">${fmt(s.precio)}</td>
+      <td style="text-align:right">${s.produccion ? fmt(s.produccion) : '—'}</td>
+      <td style="text-align:right">${ivaAmt ? fmt(ivaAmt) : '—'}</td>
+      <td style="text-align:right">${munAmt ? fmt(munAmt) : '—'}</td>
+      <td style="text-align:right;font-weight:600">${fmt(rowTotal)}</td>
+    </tr>`;
+  }).join('');
+
+  const html = `
+  <html><head><meta charset="UTF-8">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'DM Sans',sans-serif; color:#1A1916; font-size:12px; padding:32px 40px; background:#fff; }
+    .header { border-bottom: 2px solid #1A1916; padding-bottom:16px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:flex-end; }
+    .logo { font-family:'Fraunces',serif; font-size:22px; font-weight:600; }
+    .logo span { color:#2B4FFF; }
+    .meta { text-align:right; font-size:11px; color:#6B6760; line-height:1.8; }
+    h1 { font-family:'Fraunces',serif; font-size:20px; font-weight:600; margin-bottom:4px; }
+    .subtitle { color:#6B6760; font-size:12px; margin-bottom:20px; }
+    .metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px; }
+    .m { border:1px solid #D6D2C8; border-radius:8px; padding:12px 14px; }
+    .m-label { font-size:9px; letter-spacing:0.08em; text-transform:uppercase; color:#9E9A93; margin-bottom:4px; }
+    .m-value { font-family:'Fraunces',serif; font-size:18px; font-weight:600; color:#1A1916; }
+    .m-value.accent { color:#2B4FFF; }
+    table { width:100%; border-collapse:collapse; font-size:11px; }
+    th { text-align:left; font-size:9px; text-transform:uppercase; letter-spacing:0.07em; color:#9E9A93; border-bottom:1.5px solid #1A1916; padding:6px 8px; }
+    td { padding:8px 8px; border-bottom:1px solid #EDEAE3; }
+    .totals { margin-top:16px; border-top:2px solid #1A1916; padding-top:14px; display:flex; justify-content:flex-end; gap:24px; }
+    .t-item { text-align:right; }
+    .t-label { font-size:9px; text-transform:uppercase; letter-spacing:0.07em; color:#9E9A93; }
+    .t-value { font-family:'Fraunces',serif; font-size:16px; font-weight:600; }
+    .t-value.main { color:#2B4FFF; font-size:20px; }
+    .footer { margin-top:32px; padding-top:12px; border-top:1px solid #D6D2C8; font-size:10px; color:#9E9A93; text-align:center; }
+  </style></head>
+  <body>
+    <div class="header">
+      <div class="logo"><span class="logo-badge">Movimagen</span><span class="logo-text">cotizador</span><span class="logo-dot">.</span></div>
+      <div class="meta">
+        ${campNumero ? campNumero + '<br>' : ''}
+        ${campCliente ? campCliente + '<br>' : ''}
+        ${campInicio && campFin ? campInicio + ' → ' + campFin : ''}
+      </div>
+    </div>
+    <h1>${campNombre || 'Propuesta de campaña'}</h1>
+    ${campCliente ? `<div class="subtitle">Cliente: ${campCliente}</div>` : '<div style="margin-bottom:16px"></div>'}
+    <div class="metrics">
+      <div class="m"><div class="m-label">Inversión neta</div><div class="m-value accent">${fmt(neta)}</div></div>
+      <div class="m"><div class="m-label">Total con impuestos</div><div class="m-value">${fmt(total)}</div></div>
+      <div class="m"><div class="m-label">Impactos estimados</div><div class="m-value">${fmtNum(impactos)}</div></div>
+    </div>
+    <table>
+      <thead><tr>
+        <th>Soporte</th><th>Categoría</th><th style="text-align:center">Cant./Lug.</th>
+        <th style="text-align:right">Precio unit.</th><th style="text-align:right">Producción</th>
+        <th style="text-align:right">IVA</th><th style="text-align:right">Imp. Mun.</th><th style="text-align:right">Total</th>
+      </tr></thead>
+      <tbody>${tableRows}</tbody>
+    </table>
+    <div class="totals">
+      <div class="t-item"><div class="t-label">Neto</div><div class="t-value">${fmt(neta)}</div></div>
+      <div class="t-item"><div class="t-label">IVA</div><div class="t-value">${fmt(totalIVA)}</div></div>
+      <div class="t-item"><div class="t-label">Imp. Municipal</div><div class="t-value">${fmt(totalMun)}</div></div>
+      <div class="t-item"><div class="t-label">Total final</div><div class="t-value main">${fmt(total)}</div></div>
+    </div>
+    <div class="footer">Documento generado por cotizador · ${new Date().toLocaleDateString('es-UY')}</div>
+  </body></html>`;
+
+  const container = document.createElement('div');
+  container.innerHTML = html;
+  document.body.appendChild(container);
+
+  html2pdf().set({
+    margin: 0,
+    filename: `${campNumero || 'cotizacion'}-${campCliente || 'campaña'}.pdf`.replace(/\s+/g,'-'),
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+  }).from(container).save().then(() => {
+    document.body.removeChild(container);
+  });
+}
+
+
+// ─── DASHBOARD ───
+let chartDonut = null, chartImpactos = null, chartAcumulado = null, chartCPM = null;
+let dashVisible = false;
+
+const PALETTE = [
+  '#FF6900','#FF8C33','#1A1A2E','#0F3460','#533483','#E94560','#0A8754','#16213E'
+];
+
+// Geographic coordinates (approximate center) for UY cities/zones
+
+const DEPTO_MAP = {
+  'Rivera y L.A.Herrera': 'Montevideo',
+  'Av Italia y Ricaldoni': 'Montevideo',
+  'Rivera y Bvar Batlle y Ordoñez': 'Montevideo',
+  'Atlántico Shopping Punta del Este (Temp Alta)': 'Maldonado',
+  'Atlántico Shopping Punta del Este (Temp Baja)': 'Maldonado',
+  'Minas (2 gigantes en circuito)': 'Lavalleja',
+  'Salto': 'Salto',
+  'Paysandú': 'Paysandú',
+  'Mercedes': 'Soriano',
+  'Colonia': 'Colonia',
+  'Av 18 de Julio y Roxlo - visual  publico al Este': 'Montevideo',
+  'Bvar. Batlle y Ordoñez y Av. Rivera - visual hacia N y E': 'Montevideo',
+  'Av Italia y Caldas - visual publico hacia el Este': 'Montevideo',
+  'Coetc - Línea D9 y DM1 (Montevideo)': 'Montevideo',
+  'Coetc - Líneas Suburbanas (Mvd y Canelones)': 'Canelones',
+  'Coetc - Líneas Urbanas (Montevideo)': 'Montevideo',
+  'Aeropuerto Montevideo - Partidas y Arribos': 'Canelones',
+  'Aeropuertos Mvd y Pta del Este - Part. y Arribos': 'Canelones / Maldonado',
+};
+
+let chartDepto = null;
+
+function renderDepto(items) {
+  const deptoMap = {};
+  items.forEach(({ soporte: s, qty }) => {
+    const depto = DEPTO_MAP[s.ubicacion] || 'Otros';
+    if (!deptoMap[depto]) deptoMap[depto] = 0;
+    deptoMap[depto] += calcBase(s, qty);
+  });
+
+  const deptos = Object.keys(deptoMap).sort((a, b) => deptoMap[b] - deptoMap[a]);
+  const vals = deptos.map(d => Math.round(deptoMap[d]));
+
+  if (chartDepto) chartDepto.destroy();
+  chartDepto = new Chart(document.getElementById('chartDepto'), {
+    type: 'doughnut',
+    data: {
+      labels: deptos,
+      datasets: [{
+        data: vals,
+        backgroundColor: deptos.map((_, i) => PALETTE[i % PALETTE.length]),
+        borderWidth: 2,
+        borderColor: '#ffffff',
+        hoverOffset: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '58%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { font: { size: 10, family: "'DM Sans'" }, padding: 8, boxWidth: 10 }
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => ' ' + ctx.label + ': ' + fmt(ctx.raw),
+            afterLabel: ctx => {
+              const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+              return ' ' + (ctx.raw / total * 100).toFixed(1) + '% del plan';
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+const GEO_COORDS = {
+  'Rivera y L.A.Herrera':           { lat: -34.88, lng: -56.16, ciudad: 'Montevideo' },
+  'Av Italia y Ricaldoni':          { lat: -34.87, lng: -56.14, ciudad: 'Montevideo' },
+  'Rivera y Bvar Batlle y Ordoñez': { lat: -34.88, lng: -56.15, ciudad: 'Montevideo' },
+  'Atlántico Shopping Punta del Este (Temp Alta)': { lat: -34.95, lng: -54.95, ciudad: 'Punta del Este' },
+  'Atlántico Shopping Punta del Este (Temp Baja)': { lat: -34.95, lng: -54.95, ciudad: 'Punta del Este' },
+  'Minas (2 gigantes en circuito)': { lat: -34.37, lng: -55.23, ciudad: 'Minas' },
+  'Salto':                          { lat: -31.38, lng: -57.96, ciudad: 'Salto' },
+  'Paysandú':                       { lat: -32.32, lng: -58.07, ciudad: 'Paysandú' },
+  'Mercedes':                       { lat: -33.25, lng: -58.02, ciudad: 'Mercedes' },
+  'Colonia':                        { lat: -34.46, lng: -57.84, ciudad: 'Colonia' },
+  'Av 18 de Julio y Roxlo - visual  publico al Este': { lat: -34.904, lng: -56.19, ciudad: 'Montevideo' },
+  'Bvar. Batlle y Ordoñez y Av. Rivera - visual hacia N y E': { lat: -34.88, lng: -56.16, ciudad: 'Montevideo' },
+  'Av Italia y Caldas - visual publico hacia el Este': { lat: -34.87, lng: -56.14, ciudad: 'Montevideo' },
+  'Coetc - Línea D9 y DM1 (Montevideo)':           { lat: -34.90, lng: -56.18, ciudad: 'Montevideo' },
+  'Coetc - Líneas Suburbanas (Mvd y Canelones)':    { lat: -34.52, lng: -56.23, ciudad: 'Canelones' },
+  'Coetc - Líneas Urbanas (Montevideo)':            { lat: -34.90, lng: -56.18, ciudad: 'Montevideo' },
+  'Aeropuerto Montevideo - Partidas y Arribos':     { lat: -34.84, lng: -56.03, ciudad: 'Carrasco' },
+  'Aeropuertos Mvd y Pta del Este - Part. y Arribos':{ lat: -34.84, lng: -56.03, ciudad: 'Carrasco / PDE' },
+};
+
+function toggleDashboard() {
+  dashVisible = !dashVisible;
+  const section = document.getElementById('dashboardSection');
+  const btn = document.getElementById('dashBtn');
+  section.style.display = dashVisible ? 'block' : 'none';
+  btn.classList.toggle('active', dashVisible);
+  btn.textContent = dashVisible ? '◈ Ocultar análisis' : '◈ Ver análisis';
+  if (dashVisible) renderDashboard();
+}
+
+function renderDashboard() {
+  const items = Object.values(plan);
+  if (!items.length) return;
+
+  // ─ KPIs ─
+  let neta = 0, total = 0, impactos = 0;
+  items.forEach(({soporte: s, qty}) => {
+    const base = calcBase(s, qty);
+    const ivaAmt = s.iva ? base * (config.ivaRate / 100) : 0;
+    const munAmt = s.imp_municipal ? base * (config.munRate / 100) : 0;
+    neta += base; total += base + ivaAmt + munAmt;
+    impactos += s.impactos * qty;
+  });
+  const cpm = impactos > 0 ? (neta / impactos * 1000) : 0;
+  const inicio = document.getElementById('campInicio').value;
+  const fin = document.getElementById('campFin').value;
+  let semanas = '—', dias = 0;
+  if (inicio && fin) {
+    dias = Math.round((new Date(fin) - new Date(inicio)) / 86400000);
+    semanas = dias > 0 ? Math.round(dias / 7) + ' sem.' : '—';
+  }
+
+  document.getElementById('dkNeta').textContent = fmt(neta);
+  document.getElementById('dkTotal').textContent = fmt(total);
+  document.getElementById('dkImpactos').textContent = fmtNum(impactos);
+  document.getElementById('dkCPM').textContent = cpm > 0 ? fmt(cpm) : '—';
+  document.getElementById('dkSoportes').textContent = items.length;
+  document.getElementById('dkSemanas').textContent = semanas;
+
+  const campNom = document.getElementById('campNombre').value || 'Campaña';
+  const campCli = document.getElementById('campCliente').value;
+  document.getElementById('dashSubtitle').textContent =
+    [campNom, campCli, inicio && fin ? inicio + ' → ' + fin : ''].filter(Boolean).join(' · ');
+
+  // ─ Build category data ─
+  const catMap = {};
+  items.forEach(({soporte: s, qty}) => {
+    if (!catMap[s.categoria]) catMap[s.categoria] = { neta: 0, impactos: 0, count: 0 };
+    catMap[s.categoria].neta += calcBase(s, qty);
+    catMap[s.categoria].impactos += s.impactos * qty;
+    catMap[s.categoria].count += 1;
+  });
+  const cats = Object.keys(catMap);
+  const catColors = {};
+  cats.forEach((c, i) => catColors[c] = PALETTE[i % PALETTE.length]);
+
+  // ─ DONUT: inversión por categoría ─
+  if (chartDonut) chartDonut.destroy();
+  chartDonut = new Chart(document.getElementById('chartDonut'), {
+    type: 'doughnut',
+    data: {
+      labels: cats.map(c => c.length > 22 ? c.slice(0, 20) + '…' : c),
+      datasets: [{
+        data: cats.map(c => Math.round(catMap[c].neta)),
+        backgroundColor: cats.map(c => catColors[c]),
+        borderWidth: 2,
+        borderColor: '#ffffff',
+        hoverOffset: 6
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '62%',
+      plugins: {
+        legend: { position: 'right', labels: { font: { size: 11, family: "'DM Sans'" }, padding: 12, boxWidth: 10 } },
+        tooltip: { callbacks: { label: ctx => ' ' + ctx.label + ': ' + fmt(ctx.raw) } }
+      }
+    }
+  });
+
+  // ─ BARRAS HORIZONTALES: impactos por soporte ─
+  const sWithImpactos = items.filter(i => i.soporte.impactos > 0)
+    .map(i => ({ label: i.soporte.nombre + ' — ' + i.soporte.ubicacion.split('(')[0].trim().slice(0, 28), val: i.soporte.impactos * i.qty, color: catColors[i.soporte.categoria] }))
+    .sort((a, b) => b.val - a.val)
+    .slice(0, 12);
+
+  const canvasImp = document.getElementById('chartImpactos');
+  const neededH = Math.max(280, sWithImpactos.length * 32 + 40);
+  canvasImp.style.height = neededH + 'px';
+  canvasImp.parentElement.style.height = neededH + 'px';
+
+  if (chartImpactos) chartImpactos.destroy();
+  chartImpactos = new Chart(canvasImp, {
+    type: 'bar',
+    data: {
+      labels: sWithImpactos.map(s => s.label),
+      datasets: [{ data: sWithImpactos.map(s => s.val), backgroundColor: sWithImpactos.map(s => s.color), borderRadius: 4, borderSkipped: false }]
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + fmtNum(ctx.raw) + ' impactos' } } },
+      scales: {
+        x: { grid: { color: '#E5E2DB' }, ticks: { font: { size: 10 }, callback: v => fmtNum(v) } },
+        y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+
+  // ─ LÍNEA ACUMULADA: impactos durante campaña ─
+  if (chartAcumulado) chartAcumulado.destroy();
+  const semTotal = dias > 0 ? Math.max(1, Math.round(dias / 7)) : 4;
+  const impPorSem = impactos / semTotal;
+  const semLabels = Array.from({ length: semTotal }, (_, i) => 'Sem ' + (i + 1));
+  const acumData = semLabels.map((_, i) => Math.round(impPorSem * (i + 1)));
+
+  chartAcumulado = new Chart(document.getElementById('chartAcumulado'), {
+    type: 'line',
+    data: {
+      labels: semLabels,
+      datasets: [{
+        label: 'Impactos acumulados',
+        data: acumData,
+        borderColor: '#FF6900',
+        backgroundColor: 'rgba(255,105,0,0.08)',
+        borderWidth: 2.5,
+        pointRadius: 4,
+        pointBackgroundColor: '#FF6900',
+        fill: true,
+        tension: 0.35
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + fmtNum(ctx.raw) + ' impactos acum.' } } },
+      scales: {
+        x: { grid: { color: '#E5E2DB' }, ticks: { font: { size: 10 } } },
+        y: { grid: { color: '#E5E2DB' }, ticks: { font: { size: 10 }, callback: v => fmtNum(v) } }
+      }
+    }
+  });
+
+  // ─ CPM por soporte ─
+  const sForCPM = items.filter(i => i.soporte.impactos > 0).map(i => ({
+    label: i.soporte.nombre.slice(0, 18) + ' — ' + i.soporte.ubicacion.split('(')[0].trim().slice(0, 18),
+    cpm: Math.round(calcBase(i.soporte, i.qty) / (i.soporte.impactos * i.qty) * 1000),
+    color: catColors[i.soporte.categoria]
+  })).sort((a, b) => a.cpm - b.cpm);
+
+  if (chartCPM) chartCPM.destroy();
+  chartCPM = new Chart(document.getElementById('chartCPM'), {
+    type: 'bar',
+    data: {
+      labels: sForCPM.map(s => s.label),
+      datasets: [{ data: sForCPM.map(s => s.cpm), backgroundColor: sForCPM.map(s => s.color), borderRadius: 4 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' CPM: ' + fmt(ctx.raw) } } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 9 }, maxRotation: 30 } },
+        y: { grid: { color: '#E5E2DB' }, ticks: { font: { size: 10 }, callback: v => '$' + v } }
+      }
+    }
+  });
+
+  // ─ TORTA por departamento ─
+  renderDepto(items);
+
+  // ─ TABLA RESUMEN ─
+  const tbody = document.getElementById('dashTableBody');
+  tbody.innerHTML = cats.map((cat, ci) => {
+    const d = catMap[cat];
+    const pct = neta > 0 ? (d.neta / neta * 100).toFixed(1) : '0.0';
+    const cpmCat = d.impactos > 0 ? fmt(d.neta / d.impactos * 1000) : '—';
+    return `<tr>
+      <td><span class="cat-dot" style="background:${catColors[cat]}"></span>${cat}</td>
+      <td class="r">${d.count}</td>
+      <td class="r">${fmt(d.neta)}</td>
+      <td class="r">${pct}%</td>
+      <td class="r">${fmtNum(d.impactos)}</td>
+      <td class="r">${cpmCat}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderMapa(items, catColors) {
+  const container = document.getElementById('mapaUY');
+  const W = container.clientWidth || 340;
+  const H = container.clientHeight || 240;
+
+  // Aggregate by city
+  const cityMap = {};
+  items.forEach(({ soporte: s, qty }) => {
+    const geo = GEO_COORDS[s.ubicacion];
+    if (!geo) return;
+    if (!cityMap[geo.ciudad]) cityMap[geo.ciudad] = { lat: geo.lat, lng: geo.lng, inversion: 0, impactos: 0, categoria: s.categoria };
+    cityMap[geo.ciudad].inversion += calcBase(s, qty);
+    cityMap[geo.ciudad].impactos += s.impactos * qty;
+  });
+
+  // UY bounding box
+  const latMin = -35.0, latMax = -30.0, lngMin = -58.5, lngMax = -53.0;
+  const pad = 24;
+  function project(lat, lng) {
+    const x = pad + (lng - lngMin) / (lngMax - lngMin) * (W - pad * 2);
+    const y = pad + (1 - (lat - latMin) / (latMax - latMin)) * (H - pad * 2);
+    return { x, y };
+  }
+
+  const maxInv = Math.max(...Object.values(cityMap).map(c => c.inversion), 1);
+
+  // Simple Uruguay outline (simplified polygon)
+  const outline = [
+    [-30.1,-57.6],[-30.2,-57.0],[-30.5,-56.0],[-30.9,-55.5],[-31.2,-55.1],
+    [-31.8,-54.0],[-32.5,-53.4],[-33.7,-53.4],[-34.0,-53.7],[-34.5,-54.0],
+    [-34.9,-55.0],[-35.0,-56.0],[-34.9,-57.0],[-34.5,-58.4],[-33.8,-58.4],
+    [-32.5,-58.2],[-31.4,-58.0],[-30.8,-57.9],[-30.1,-57.6]
+  ].map(([la, ln]) => project(la, ln));
+
+  const pathD = outline.map((p, i) => (i === 0 ? `M${p.x.toFixed(1)},${p.y.toFixed(1)}` : `L${p.x.toFixed(1)},${p.y.toFixed(1)}`)).join(' ') + ' Z';
+
+  const dots = Object.entries(cityMap).map(([city, d]) => {
+    const p = project(d.lat, d.lng);
+    const r = 6 + Math.round((d.inversion / maxInv) * 14);
+    const color = catColors[d.categoria] || PALETTE[0];
+    return `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${r}" fill="${color}" fill-opacity="0.75" stroke="${color}" stroke-width="1.5"
+      class="mapa-dot"
+      data-city="${city}" data-inv="${Math.round(d.inversion)}" data-imp="${d.impactos}"/>`;
+  }).join('\n');
+
+  container.innerHTML = `
+    <div style="position:relative;width:${W}px;height:${H}px">
+      <svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+        <path d="${pathD}" fill="#EEE9E0" stroke="#C8C2B5" stroke-width="1.2"/>
+        ${dots}
+      </svg>
+      <div class="mapa-tooltip" id="mapaTooltip"></div>
+    </div>`;
+
+  // Tooltip
+  container.querySelectorAll('.mapa-dot').forEach(dot => {
+    dot.addEventListener('mouseenter', function(e) {
+      const tt = document.getElementById('mapaTooltip');
+      tt.innerHTML = `<strong>${this.dataset.city}</strong><br>${fmt(+this.dataset.inv)}<br>${fmtNum(+this.dataset.imp)} impactos`;
+      tt.style.opacity = '1';
+      tt.style.left = (e.offsetX + 12) + 'px';
+      tt.style.top = (e.offsetY - 10) + 'px';
+    });
+    dot.addEventListener('mouseleave', () => {
+      document.getElementById('mapaTooltip').style.opacity = '0';
+    });
+  });
+}
+
+// Auto-refresh dashboard when plan changes
+const origRenderPlan = renderPlan;
+window.renderPlan = function() {
+  origRenderPlan();
+  if (dashVisible) renderDashboard();
+};
+
+
+init();
+</script>
+</body>
+</html>
